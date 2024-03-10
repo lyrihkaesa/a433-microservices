@@ -1,43 +1,47 @@
-version: 2.1
-orbs:
-  docker: circleci/docker@2.5.0
-  go: circleci/go@1.7.3
+version: 2.1 # Versi dari CircleCI yang digunakan dalam konfigurasi ini.
 
-jobs:
-  lint-dockerfile:
+orbs: # Definisi orbs yang akan digunakan dalam konfigurasi.
+  docker: circleci/docker@2.5.0 # Orb Docker versi 2.5.0 untuk operasi-operasi terkait Docker.
+  go: circleci/go@1.7.3 # Orb Go versi 1.7.3 untuk konfigurasi spesifik Go.
+
+jobs: # Definisi pekerjaan-pekerjaan yang akan dieksekusi.
+  lint-dockerfile: # Pekerjaan untuk melakukan linting pada Dockerfile.
     executor: docker/machine
     steps:
-      - checkout
-      - docker/dockerlint:
-          dockerfile: ./Dockerfile
-          treat-warnings-as-errors: true
-  test-app:
+      - checkout # Mengambil kode sumber dari repositori.
+      - docker/dockerlint: # Menjalankan Docker linting tool.
+          dockerfile: ./Dockerfile # Dockerfile yang akan diperiksa.
+          treat-warnings-as-errors: true # Memperlakukan peringatan sebagai error.
+
+  test-app: # Pekerjaan untuk menjalankan pengujian aplikasi.
     executor:
-      name: go/default
-      tag: '1.19.2'
+      name: go/default # Executor default untuk Go.
+      tag: '1.19.2' # Versi dari executor Go yang digunakan.
     steps:
-      - checkout
-      - run:
-          name: 'Test app'
-          command: 'go test -v -short --count=1 $(go list ./...)'
-  build-app-karsajobs:
+      - checkout # Mengambil kode sumber dari repositori.
+      - run: # Menjalankan perintah bash.
+          name: 'Test app' # Nama dari langkah ini.
+          command: 'go test -v -short --count=1 $(go list ./...)' # Perintah untuk menjalankan pengujian aplikasi.
+
+  build-app-karsajobs: # Pekerjaan untuk membangun dan melakukan push image Docker.
     docker:
-      - image: cimg/base:stable
+      - image: cimg/base:stable # Menggunakan image Docker cimg/base:stable.
     steps:
-      - checkout
-      - setup_remote_docker
-      - run:
-          name: 'Docker build'
-          command: 'docker build -t ghcr.io/$GITHUB_USERNAME/karsajobs:latest .'
-      - run:
-          name: 'Docker login'
-          command: 'echo $PAT | docker login ghcr.io --username $GITHUB_USERNAME --password-stdin'
-      - run:
-          name: 'Docker push'
-          command: 'docker push ghcr.io/$GITHUB_USERNAME/karsajobs:latest'
-workflows:
-  karsajobs-workflow:
+      - checkout # Mengambil kode sumber dari repositori.
+      - setup_remote_docker # Mengatur Docker Remote API.
+      - run: # Menjalankan perintah bash.
+          name: 'Docker build' # Nama dari langkah ini.
+          command: 'docker build -t ghcr.io/$GITHUB_USERNAME/karsajobs:latest .' # Perintah untuk membangun image Docker.
+      - run: # Menjalankan perintah bash.
+          name: 'Docker login' # Nama dari langkah ini.
+          command: 'echo $PAT | docker login ghcr.io --username $GITHUB_USERNAME --password-stdin' # Perintah untuk login ke GitHub Container Registry.
+      - run: # Menjalankan perintah bash.
+          name: 'Docker push' # Nama dari langkah ini.
+          command: 'docker push ghcr.io/$GITHUB_USERNAME/karsajobs:latest' # Perintah untuk push image Docker.
+
+workflows: # Definisi alur kerja.
+  karsajobs-workflow: # Alur kerja untuk pekerjaan-pekerjaan sebelumnya.
     jobs:
-      - lint-dockerfile
-      - test-app
-      - build-app-karsajobs
+      - lint-dockerfile # Menjalankan pekerjaan lint-dockerfile.
+      - test-app # Menjalankan pekerjaan test-app.
+      - build-app-karsajobs # Menjalankan pekerjaan build-app-karsajobs.
