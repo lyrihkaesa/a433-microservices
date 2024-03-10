@@ -1,32 +1,35 @@
-version: 2.1
-orbs:
-  docker: circleci/docker@2.5.0
+version: 2.1 # Versi dari CircleCI yang digunakan dalam konfigurasi ini.
 
-jobs:
-  lint-dockerfile:
-    executor: docker/machine
+orbs: # Definisi orbs yang akan digunakan dalam konfigurasi.
+  docker: circleci/docker@2.5.0 # Orb Docker versi 2.5.0 untuk operasi-operasi terkait Docker.
+
+jobs: # Definisi pekerjaan-pekerjaan yang akan dieksekusi.
+  lint-dockerfile: # Pekerjaan untuk melakukan linting pada Dockerfile.
+    executor: docker/machine # Menggunakan executor Docker.
     steps:
-      - checkout
-      - docker/dockerlint:
-          dockerfile: ./Dockerfile
-          treat-warnings-as-errors: true
-  build-app-karsajobs-ui:
+      - checkout # Mengambil kode sumber dari repositori.
+      - docker/dockerlint: # Menjalankan Docker linting tool.
+          dockerfile: ./Dockerfile # Dockerfile yang akan diperiksa.
+          treat-warnings-as-errors: true # Memperlakukan peringatan sebagai error.
+
+  build-app-karsajobs-ui: # Pekerjaan untuk membangun dan melakukan push image Docker UI.
     docker:
-      - image: cimg/base:stable
+      - image: cimg/base:stable # Menggunakan image Docker cimg/base:stable.
     steps:
-      - checkout
-      - setup_remote_docker
-      - run:
-          name: 'Docker build'
-          command: 'docker build -t ghcr.io/$GITHUB_USERNAME/karsajobs-ui:latest .'
-      - run:
-          name: 'Docker login'
-          command: 'echo $PAT | docker login ghcr.io --username $GITHUB_USERNAME --password-stdin'
-      - run:
-          name: 'Docker push'
-          command: 'docker push ghcr.io/$GITHUB_USERNAME/karsajobs-ui:latest'
-workflows:
-  karsajobs-ui-workflow:
+      - checkout # Mengambil kode sumber dari repositori.
+      - setup_remote_docker # Mengatur Docker Remote API.
+      - run: # Menjalankan perintah bash.
+          name: 'Docker build' # Nama dari langkah ini.
+          command: 'docker build -t ghcr.io/$GITHUB_USERNAME/karsajobs-ui:latest .' # Perintah untuk membangun image Docker UI.
+      - run: # Menjalankan perintah bash.
+          name: 'Docker login' # Nama dari langkah ini.
+          command: 'echo $PAT | docker login ghcr.io --username $GITHUB_USERNAME --password-stdin' # Perintah untuk login ke GitHub Container Registry.
+      - run: # Menjalankan perintah bash.
+          name: 'Docker push' # Nama dari langkah ini.
+          command: 'docker push ghcr.io/$GITHUB_USERNAME/karsajobs-ui:latest' # Perintah untuk push image Docker UI.
+
+workflows: # Definisi alur kerja.
+  karsajobs-ui-workflow: # Alur kerja untuk pekerjaan-pekerjaan sebelumnya.
     jobs:
-      - lint-dockerfile
-      - build-app-karsajobs-ui
+      - lint-dockerfile # Menjalankan pekerjaan lint-dockerfile.
+      - build-app-karsajobs-ui # Menjalankan pekerjaan build-app-karsajobs-ui.
