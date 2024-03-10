@@ -1,0 +1,43 @@
+version: 2.1
+orbs:
+  docker: circleci/docker@2.5.0
+  go: circleci/go@1.7.3
+
+jobs:
+  lint-dockerfile:
+    executor: docker/machine
+    steps:
+      - checkout
+      - docker/dockerlint:
+          dockerfile: ./Dockerfile
+          treat-warnings-as-errors: true
+  test-app:
+    executor:
+      name: go/default
+      tag: '1.19.2'
+    steps:
+      - checkout
+      - run:
+          name: 'Test app'
+          command: 'go test -v -short --count=1 $(go list ./...)'
+  build-app-karsajobs:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run:
+          name: 'Docker build'
+          command: 'docker build -t ghcr.io/$GITHUB_USERNAME/karsajobs:latest .'
+      - run:
+          name: 'Docker login'
+          command: 'echo $PAT | docker login ghcr.io --username $GITHUB_USERNAME --password-stdin'
+      - run:
+          name: 'Docker push'
+          command: 'docker push ghcr.io/$GITHUB_USERNAME/karsajobs:latest'
+workflows:
+  karsajobs-workflow:
+    jobs:
+      - lint-dockerfile
+      - test-app
+      - build-app-karsajobs
